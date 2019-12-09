@@ -1,0 +1,137 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
+
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.JSONArray;
+import org.json.simple.parser.ParseException;
+
+public class ReadFLH {
+
+	public ReadFLH() {
+	}
+
+	public void test(int idCasa) {
+		try {
+			File diretorio = new File("Resources/Casa " + String.valueOf(idCasa));
+			File[] listaFicheiros = diretorio.listFiles();
+			System.out.println("CASA " + idCasa + ":");
+			if (listaFicheiros != null) {
+				for (int f = 0; f < listaFicheiros.length; f++) {
+					int counterNegLocation = 0;
+					int counterNegAmenities = 0;
+					int counterNegRoom = 0;
+					int counterNegHost = 0;
+					int counterNegValue = 0;
+
+					int counterPosLocation = 0;
+					int counterPosAmenities = 0;
+					int counterPosRoom = 0;
+					int counterPosHost = 0;
+					int counterPosValue = 0;
+					Reader reader = new FileReader(listaFicheiros[f]);
+					JSONParser parser = new JSONParser();
+					Object obj = parser.parse(reader);
+					JSONArray jsonArray = (JSONArray) obj;
+					JSONObject jsonObj = (JSONObject) jsonArray.get(0);
+					JSONObject jsonData = (JSONObject) jsonObj.get("data");
+					String dataFrom = jsonData.get("date_range_from").toString();
+					String dataTo = jsonData.get("date_range_to").toString();
+					JSONObject jsonValue = (JSONObject) jsonData.get("value");
+					JSONArray jsonNegArray = (JSONArray) jsonValue.get("negative");
+					for (int i = 0; i < jsonNegArray.size(); i++) {
+						String[] vetorString = jsonNegArray.get(i).toString().split("\"");
+						String categoria = returnCategory(vetorString[1]);
+						JSONObject jsonAux = (JSONObject) jsonNegArray.get(i);
+						long numeroOcorrencias = (long) jsonAux.get(vetorString[1]);
+						if (categoria.contentEquals("Location"))
+							counterNegLocation += numeroOcorrencias;
+						if (categoria.contentEquals("Internet") || categoria.contentEquals("Facilities")
+								|| categoria.contentEquals("Maintenance") || categoria.contentEquals("Cleanliness")
+								|| categoria.contentEquals("Ambience") || categoria.contentEquals("Bathroom")
+								|| categoria.contentEquals("Decoration"))
+							counterNegAmenities += numeroOcorrencias;
+						if (categoria.contentEquals("Room") || categoria.contentEquals("Bed"))
+							counterNegRoom += numeroOcorrencias;
+						if (categoria.contentEquals("Service"))
+							counterNegHost += numeroOcorrencias;
+						if (categoria.contentEquals("Value"))
+							counterNegValue += numeroOcorrencias;
+					}
+					JSONArray jsonPosArray = (JSONArray) jsonValue.get("positive");
+					for (int k = 0; k < jsonPosArray.size(); k++) {
+						String[] vetorString = jsonPosArray.get(k).toString().split("\"");
+						String categoria = returnCategory(vetorString[1]);
+						JSONObject jsonAux = (JSONObject) jsonPosArray.get(k);
+						long numeroOcorrencias = (long) jsonAux.get(vetorString[1]);
+						if (categoria.contentEquals("Location"))
+							counterPosLocation += numeroOcorrencias;
+						if (categoria.contentEquals("Internet") || categoria.contentEquals("Facilities")
+								|| categoria.contentEquals("Maintenance") || categoria.contentEquals("Cleanliness")
+								|| categoria.contentEquals("Ambience") || categoria.contentEquals("Bathroom")
+								|| categoria.contentEquals("Decoration"))
+							counterPosAmenities += numeroOcorrencias;
+						if (categoria.contentEquals("Room") || categoria.contentEquals("Bed"))
+							counterPosRoom += numeroOcorrencias;
+						if (categoria.contentEquals("Service"))
+							counterPosHost += numeroOcorrencias;
+						if (categoria.contentEquals("Value"))
+							counterPosValue += numeroOcorrencias;
+					}
+					String[] vetorDatas = listaFicheiros[f].getName().toString().split("\\.");
+					System.out.println("Date: " + vetorDatas[0]);
+					System.out.println("From: " + dataFrom);
+					System.out.println("To: " + dataTo + "\n");
+					System.out.println("Location NEGATIVE: " + counterNegLocation);
+					System.out.println("Location POSITIVE: " + counterPosLocation + "\n");
+					System.out.println("Amenities NEGATIVE: " + counterNegAmenities);
+					System.out.println("Amenities POSITIVE: " + counterPosAmenities + "\n");
+					System.out.println("Room NEGATIVE: " + counterNegRoom);
+					System.out.println("Room POSITIVE: " + counterPosRoom + "\n");
+					System.out.println("Host NEGATIVE: " + counterNegHost);
+					System.out.println("Host POSITIVE: " + counterPosHost + "\n");
+					System.out.println("Value NEGATIVE: " + counterNegValue);
+					System.out.println("Value POSITIVE: " + counterPosValue + "\n");
+				}
+			}
+
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public String returnCategory(String id) {
+		try {
+			Reader reader = new FileReader("C:\\Users\\dfari\\eclipse-workspace\\Mestrado\\Categories.json");
+			JSONParser parser = new JSONParser();
+			Object obj = parser.parse(reader);
+			JSONArray jsonArray = (JSONArray) obj;
+			for (int i = 0; i < jsonArray.size(); i++) {
+				JSONObject jsonObj = (JSONObject) jsonArray.get(i);
+				Object obj2 = jsonObj.get("concepts");
+				JSONArray arrayAux = (JSONArray) obj2;
+				for (int k = 0; k < arrayAux.size(); k++) {
+					JSONObject jsonObjAux = (JSONObject) arrayAux.get(k);
+					String idAux = jsonObjAux.get("id").toString();
+					if (idAux.equals(id)) {
+						return jsonObj.get("name").toString();
+					}
+				}
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		return "Not Found";
+	}
+}
